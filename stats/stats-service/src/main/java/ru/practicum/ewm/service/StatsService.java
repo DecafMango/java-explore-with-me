@@ -5,6 +5,7 @@ import org.springframework.stereotype.Service;
 import ru.practicum.ewm.EndpointHitDto;
 import ru.practicum.ewm.ViewStatsDto;
 import ru.practicum.ewm.dao.EndpointHitRepository;
+import ru.practicum.ewm.exception.ValidationException;
 import ru.practicum.ewm.mapper.EndPointHitMapper;
 import ru.practicum.ewm.mapper.ViewStatsMapper;
 import ru.practicum.ewm.model.ViewStats;
@@ -20,6 +21,9 @@ public class StatsService {
     private final EndpointHitRepository repository;
 
     public List<ViewStatsDto> getViewStats(LocalDateTime start, LocalDateTime end, String[] uris, Boolean unique) {
+
+        if (start != null && end != null && end.isBefore(start))
+            throw new ValidationException("Parameter start mustn't be later than parameter end.");
 
         List<ViewStats> viewStats;
 
@@ -43,4 +47,5 @@ public class StatsService {
     public EndpointHitDto postEndPointHit(EndpointHitDto endpointHitDto) {
         return EndPointHitMapper.toEndPointHitDto(repository.save(EndPointHitMapper.toEndPointHit(endpointHitDto)));
     }
+
 }
