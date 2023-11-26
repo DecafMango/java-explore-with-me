@@ -20,6 +20,8 @@ import ru.practicum.ewm.event.service.EventService;
 import ru.practicum.ewm.exception.exceptions.ObjectNotFoundException;
 
 import java.time.LocalDateTime;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -132,10 +134,22 @@ public class CompilationService {
     }
 
     private Map<String, Long> getUriHits(List<Event> events) {
+        if (events.isEmpty())
+            return Collections.emptyMap();
+
+        Event earliestCreatedEvent = events.stream()
+                .sorted(new Comparator<Event>() {
+                    @Override
+                    public int compare(Event event1, Event event2) {
+                        return event1.getEventDate().compareTo(event2.getEventDate());
+                    }
+                })
+                .collect(Collectors.toList())
+                .get(0);
 
         return client.getViewStats(
-                LocalDateTime.of(2000, 1, 1, 1, 1, 1),
-                LocalDateTime.of(2100, 1, 1, 1, 1, 1),
+                earliestCreatedEvent.getCreatedOn(),
+                LocalDateTime.now(),
                 events
                         .stream()
                         .map(event -> "/events/" + event.getId()).toArray(String[]::new),

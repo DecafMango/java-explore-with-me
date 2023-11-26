@@ -27,6 +27,7 @@ import ru.practicum.ewm.user.model.User;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
@@ -130,7 +131,7 @@ public class EventService {
         Event event = eventRepository.findByIdAndState(eventId, EventState.PUBLISHED)
                 .orElseThrow(() -> new ObjectNotFoundException("Event with id=" + eventId + " doesn't exist or haven't been published yet."));
         client.postEndPointHit(new EndpointHitDto(APPLICATION_NAME, uri, ip, LocalDateTime.now()));
-        return EventMapper.toEventFullDto(event, getEventViews(eventId));
+        return EventMapper.toEventFullDto(event, getEventViews(event));
     }
 
     public List<EventFullDto> getEventsByAdmin(
@@ -208,7 +209,7 @@ public class EventService {
                 .orElseThrow(() -> new ObjectNotFoundException("Event with id=" + eventId + " doesn't exist or haven't been published yet."));
         if (!event.getInitiator().getId().equals(userId))
             throw new UserIsNotEventInitiatorException("User with id=" + userId + " is not an initiator of event with id=" + eventId);
-        return EventMapper.toEventFullDto(event, getEventViews(eventId));
+        return EventMapper.toEventFullDto(event, getEventViews(event));
     }
 
     public List<ParticipationRequestDto> getEventRequests(Long userId, Long eventId) {
@@ -281,7 +282,7 @@ public class EventService {
         if (updateEventAdminRequest.getTitle() != null)
             previousEvent.setTitle(updateEventAdminRequest.getTitle());
 
-        return EventMapper.toEventFullDto(eventRepository.save(previousEvent), getEventViews(previousEvent.getId()));
+        return EventMapper.toEventFullDto(eventRepository.save(previousEvent), getEventViews(previousEvent));
     }
 
     @Transactional
@@ -326,7 +327,7 @@ public class EventService {
         if (updateEventUserRequest.getTitle() != null)
             previousEvent.setTitle(previousEvent.getTitle());
 
-        return EventMapper.toEventFullDto(eventRepository.save(previousEvent), getEventViews(eventId));
+        return EventMapper.toEventFullDto(eventRepository.save(previousEvent), getEventViews(previousEvent));
     }
 
     @Transactional
@@ -393,10 +394,22 @@ public class EventService {
     }
 
     private Map<String, Long> getUriHits(List<Event> events) {
+        if (events.isEmpty())
+            return Collections.emptyMap();
+
+        Event earliestCreatedEvent = events.stream()
+                .sorted(new Comparator<Event>() {
+                    @Override
+                    public int compare(Event event1, Event event2) {
+                        return event1.getEventDate().compareTo(event2.getEventDate());
+                    }
+                })
+                .collect(Collectors.toList())
+                .get(0);
 
         return client.getViewStats(
-                LocalDateTime.of(2000, 1, 1, 1, 1, 1),
-                LocalDateTime.of(2100, 1, 1, 1, 1, 1),
+                earliestCreatedEvent.getCreatedOn(),
+                LocalDateTime.now(),
                 events
                         .stream()
                         .map(event -> "/events/" + event.getId()).toArray(String[]::new),
@@ -404,12 +417,12 @@ public class EventService {
         ).stream().collect(Collectors.toMap(ViewStatsDto::getUri, ViewStatsDto::getHits));
     }
 
-    private Long getEventViews(Long eventId) {
+    private Long getEventViews(Event event) {
         List<ViewStatsDto> viewStatsDtos = client.getViewStats(
-                LocalDateTime.of(2000, 1, 1, 0, 0, 0),
-                LocalDateTime.of(2100, 1, 1, 0, 0, 0),
+                event.getCreatedOn(),
+                LocalDateTime.now(),
                 new String[]{
-                        "/events/" + eventId
+                        "/events/" + event.getId()
                 },
                 true
         );
