@@ -4,10 +4,10 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 @SpringBootApplication
-public class ExploreWithMeStatsClient {
+public class ExploreWithMeMainService {
 
     public static void main(String[] args) {
-        SpringApplication.run(ExploreWithMeStatsClient.class, args);
+        SpringApplication.run(ExploreWithMeMainService.class, args);
     }
 
 }
