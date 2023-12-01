@@ -221,4 +221,30 @@ public class ErrorHandler {
                 .build();
     }
 
+    @ExceptionHandler
+    @ResponseStatus(HttpStatus.CONFLICT)
+    public ApiError handleUserIsNotCommentAuthorException(final UserIsNotCommentAuthorException e) {
+        log.warn(e.getMessage());
+        return new ApiError()
+                .toBuilder()
+                .status("CONFLICT")
+                .message(e.getMessage())
+                .reason("For the requested operation the conditions are not met.")
+                .timestamp(LocalDateTime.now().format(DateTimeFormatter.ofPattern(DATE_TIME_PATTERN)))
+                .build();
+    }
+
+    @ExceptionHandler
+    @ResponseStatus(HttpStatus.CONFLICT)
+    public ApiError handleUnableToUpdateCommentException(final UnableToUpdateCommentException e) {
+        log.warn(e.getMessage());
+        return new ApiError()
+                .toBuilder()
+                .status("CONFLICT")
+                .message(e.getMessage())
+                .reason("For the requested operation the conditions are not met.")
+                .timestamp(LocalDateTime.now().format(DateTimeFormatter.ofPattern(DATE_TIME_PATTERN)))
+                .build();
+    }
+
 }
